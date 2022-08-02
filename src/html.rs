@@ -69,6 +69,33 @@ impl HtmlHandler<MyError> for MyHtmlHandler {
                     )?
                 }
             }
+            Element::Code { value } => write!(
+                w,
+                "<code class=\"language-none\">{}</code>",
+                HtmlEscape(value)
+            )?,
+            Element::Verbatim { value } => write!(
+                &mut w,
+                "<code class=\"language-none\">{}</code>",
+                HtmlEscape(value)
+            )?,
+            Element::InlineSrc(inline_src) => write!(
+                w,
+                "<code class=\"language-{}\">{}</code>",
+                inline_src.lang,
+                HtmlEscape(&inline_src.body)
+            )?,
+            Element::SourceBlock(source_block) => {
+                if source_block.language.is_empty() {
+                    write!(
+                        w,
+                        "<pre class=\"src\"><code class=\"\">{}</code></pre>",
+                        HtmlEscape(&source_block.contents)
+                    )?;
+                } else {
+                    write!(w, "<div class=\"org-src-container\"><pre class=\"src\"><code class=\"language-{}\">{}</code></pre></div>", source_block.language, HtmlEscape(&source_block.contents))?;
+                }
+            }
             _ => self.0.start(w, element)?,
         }
 
@@ -81,6 +108,13 @@ impl HtmlHandler<MyError> for MyHtmlHandler {
             Element::Title(title) => {
                 write!(w, "</h{}>", title.level)?;
             }
+            // Element::SourceBlock(source_block) => {
+            //     if source_block.language.is_empty() {
+            //         write!(w, "</code></pre>")?;
+            //     } else {
+            //         write!(w, "</code></pre></div>")?;
+            //     }
+            // }
             _ => self.0.end(w, element)?,
         }
 
